@@ -104,6 +104,11 @@ section{padding:2.25rem 0}
 .btn.alt{background:transparent;color:var(--ink);border:1.5px solid var(--accent)}
 .btn.alt:hover{background:color-mix(in srgb,var(--accent) 10%,transparent)}
 .sim{margin-left:auto}
+.lv{display:inline-flex;align-items:center;gap:.4rem;font-size:.82rem;font-weight:600;padding:.25rem .7rem;border:1px solid var(--gl);border-radius:2rem;background:var(--glass);color:var(--ink)}
+.lv::before{content:"";width:.55rem;height:.55rem;border-radius:50%;background:var(--idle)}
+.lv.on::before{background:var(--c1);box-shadow:0 0 0 .25rem color-mix(in srgb,var(--c1) 25%,transparent)}
+.lv.err::before{background:var(--c4)}
+.note{margin-top:1rem;padding:.9rem 1.1rem;border-radius:.9rem;border:1px dashed var(--c3);background:color-mix(in srgb,var(--c3) 10%,transparent);font-size:.92rem}
 @media (max-width:760px){.band{grid-template-columns:1fr auto}.band .wk{grid-column:1/-1;order:3}.band .mixw{grid-column:1/-1;order:4}}
 @media (max-width:480px){
   .wrap{padding:0 1.1rem}.hero{padding:2.25rem 0 1rem}.btn{width:100%;justify-content:center}
@@ -120,13 +125,14 @@ section{padding:2.25rem 0}
 <h1 class="vh">Informe semanal: avance del equipo</h1>
 <nav class="bar" aria-label="Secciones y fecha"><div class="wrap bar-in">
   <div class="acts"><a class="btn" href="#semana">Entrega de la semana</a><a class="btn alt" href="#prox">Ver la próxima entrega</a></div>
-  <div class="sim"><label for="sim">Fecha</label><input type="date" id="sim"><button type="button" id="hoy">Hoy</button></div>
+  <div class="sim"><span class="lv" id="lv" role="status">Captura</span><label for="sim">Fecha</label><input type="date" id="sim"><button type="button" id="hoy">Hoy</button><button type="button" id="rf" hidden>Actualizar</button></div>
 </div></nav>
 
 <main>
 <section id="semana"><div class="wrap">
   <div class="sh" style="--k:var(--c1)"><i></i><h2>Entrega de la semana</h2></div>
   <div id="cur"></div>
+  <p class="note" id="nosem" hidden></p>
 </div></section>
 <section id="prox"><div class="wrap">
   <div class="sh" style="--k:var(--nx)"><i></i><h2>Próxima entrega</h2></div>
@@ -134,27 +140,46 @@ section{padding:2.25rem 0}
 </div></section>
 </main>
 
-<footer class="foot"><div class="wrap">Datos de la hoja de semanas de «planilla de tickets» (carpeta CREDICOOP), captura del 2 de noviembre de 2026.</div></footer>
+<footer class="foot"><div class="wrap" id="foot" aria-live="polite"></div></footer>
 <div class="wave" aria-hidden="true"></div>
 
 <script>
 (function(){
 var TY={F:["Funcionalidad","--c1"],M:["Mejora","--c2"],D:["Defecto","--c4"],T:["Tarea","--c3"]};
 var MES=["ene","feb","mar","abr","may","jun","jul","ago","sep","oct","nov","dic"],DIA=["dom","lun","mar","mié","jue","vie","sáb"];
-var V=[
-{v:"V-1.5",s:"2026-11-02",e:"2026-11-06",t:[
-["OT-25","Recepción de novedad de pre firma en banca","Para deploy en TS","F"],
-["OT-20","Subtrámite: alta de regla de compensación","Para deploy en TS","F"],
-["OT-23","Subtrámite: alta de adhesión de seguros","Para deploy en TS","F"],
-["OT-154","[BUG] Servicio de consulta de administrador de productos (OT-15): la columna «Asociaciones» no coincide con el detalle del producto","Para deploy en TS","D"],
-["OT-177","Online · ABM Admin de Prod: mejoras en la interfaz","Para deploy en TS","M"],
-["OT-207","[BUG] Alta de persona con validación de RENAPER (OT-10): valores incorrectos de codProvSipago en core.parametria","Para deploy en TS","D"]]},
-{v:"V-1.6",s:"2026-11-09",e:"2026-11-13",t:[
-["OT-31","Subtrámite: alta de sipago","Backlog","F"],
-["OT-13","Subtrámite: alta de tarjeta crédito Cabal","Backlog","F"],
-["OT-12","Subtrámite: alta de tarjeta crédito Visa","Backlog","F"],
-["OT-209","Alta de TC Cabal: cambios en el servicio (OT-13)","Backlog","F"],
-["OT-208","Alta de TC Visa: cambios en el servicio (OT-12)","Backlog","F"]]}];
+TY.O=["Otro","--idle"];
+var FILE_ID="12IDoks1u2eKK3QWtxmhxZk1pPInF1hMc",SERVER="Google Drive",TOOL="read_file_content";
+var SNAP=`V-1.5 Numero ,Descripcion,Estado,Tipo,,Semana OT-25, Recepcion de novedad de pre firma en banca,para deploy TS,Funcionalidad,, OT-20, Subtrámite: alta de regla de compensación,para deploy TS,Funcionalidad,, OT-23 ,Subtrámite: alta de adhesion de seguros,para deploy TS,Funcionalidad,, OT-154 ,[BUG] ONLINE - Servicio de consulta de administrador de productos OT-15. La columna “Asociaciones” de la grilla no coincide con la cantidad de módulos asociados mostrados en el detalle del producto,para deploy TS,Defecto ,, OT-177,Online - ABM Admin de Prod - Mejoras en la interfaz,para deploy TS,Mejora,, OT-207, [BUG] Subtrámite: Alta de persona con validación de RENAPER. OT-10. Valores incorrectos de codProvSipago en core.parametria.,para deploy TS,Defecto,, V-1.6 Numero ,Descripcion,Estado,Tipo,,,Semana ,08/11,12/11 OT-31, Subtrámite: alta de sipago,Backlog,Funcionalidad,,,,, OT-13 ,Subtrámite: alta de tarjeta crédito cabal,Backlog,Funcionalidad,,,,, OT-12 ,Subtrámite: alta de tarjeta crédito visa,Backlog,Funcionalidad,,,,, OT-209,Alta de TC CABAL - Cambios en el servicio-OT13,Backlog,Funcionalidad,,,,, OT-208,Alta de TC VISA - Cambios en el servicio -OT12,Backlog,Funcionalidad,,,,,`;
+var V=[],NS=[];
+function normEstado(s){var l=s.toLowerCase();return l.indexOf("entreg")>=0?"Entregado":l.indexOf("deploy")>=0?"Para deploy en TS":l.indexOf("backlog")>=0?"Backlog":s.charAt(0).toUpperCase()+s.slice(1);}
+function normTipo(s){var l=s.toLowerCase();return l.indexOf("func")===0?"F":l.indexOf("mejora")===0?"M":l.indexOf("defecto")===0?"D":l.indexOf("tarea")===0?"T":"O";}
+function dm(d,mo,y){var n=new Date(),best=null;
+  if(y){y=+y;if(y<100)y+=2000;return new Date(y,mo-1,d);}
+  [n.getFullYear()-1,n.getFullYear(),n.getFullYear()+1].forEach(function(yy){var c=new Date(yy,mo-1,d);if(!best||Math.abs(c-n)<Math.abs(best-n))best=c;});
+  return best;}
+function parseSheet(txt){
+  txt=String(txt).replace(/\\([\[\]_\\])/g,"$1");
+  var hre=/(V-?\d+(?:\.\d+)*)\s+Numero\s*,\s*Descripcion\s*,\s*Estado\s*,\s*Tipo/g,m,heads=[];
+  while((m=hre.exec(txt)))heads.push({n:m[1],a:m.index+m[0].length,b:m.index});
+  var out=[],sin=[];
+  heads.forEach(function(h,i){
+    var blk=txt.slice(h.a,i+1<heads.length?heads[i+1].b:txt.length),fr=blk.search(/OT-\d+\s*,/);
+    if(fr<0)return;
+    var pre=blk.slice(0,fr),body=blk.slice(fr),t=[],r;
+    var rowRe=/OT-(\d+)\s*,\s*("(?:[^"]|"")*"|[^,]*),([^,]*),([^,]*?),*(?=\s+OT-\d|\s*$)/g;
+    while((r=rowRe.exec(body))){
+      var d=r[2].trim();if(d.charAt(0)==='"')d=d.slice(1,-1).replace(/""/g,'"');
+      t.push(["OT-"+r[1],d.trim(),normEstado(r[3].trim()),normTipo(r[4].trim())]);}
+    if(!t.length)return;
+    var sm=pre.match(/Semana\s*,\s*(\d{1,2})\/(\d{1,2})(?:\/(\d{2,4}))?\s*,\s*(\d{1,2})\/(\d{1,2})(?:\/(\d{2,4}))?/);
+    if(!sm){sin.push({v:h.n,t:t});return;}
+    var s=dm(+sm[1],+sm[2],sm[3]),mo=monday(s),fri=new Date(mo);fri.setDate(fri.getDate()+4);
+    out.push({v:h.n,s:iso(mo),e:iso(fri),t:t});
+  });
+  out.sort(function(a,b){return a.s<b.s?-1:a.s>b.s?1:0;});
+  return {v:out,sin:sin};
+}
+
 function $(i){return document.getElementById(i);}
 function esc(s){return String(s).replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c];});}
 function pd(s){var p=s.split("-");return new Date(+p[0],+p[1]-1,+p[2]);}
@@ -186,15 +211,54 @@ function render(){
   var elapsed=wk?(w===6?5:0):w;
   sector($("cur"),cur,"--c1","No hay una entrega planificada para esta semana en la planilla.",
     {txt:wk?"La semana empieza el lunes":(w===5?"Hoy es el último día de la semana":"Quedan "+(6-w)+" días hábiles, hoy incluido"),val:elapsed,max:5,big:elapsed+"/5",small:"días"});
+  var ns=NS.filter(function(x){return x.t.some(function(t){return t[2]!=="Entregado";});}).map(function(x){return x.v+" ("+x.t.length+" tickets)";});
+  $("nosem").hidden=!ns.length;if(ns.length)$("nosem").innerHTML="En el Excel hay versiones pendientes sin semana asignada: <b>"+esc(ns.join(", "))+"</b>. Agrega su fila «Semana» para que aparezcan en su sector.";
   var dd=nxt?Math.round((pd(nxt.s)-today)/864e5):0;
   sector($("nxt"),nxt,"--nx","Todavía no hay una próxima entrega cargada en la planilla.",
     {txt:dd<=0?"Comienza esta semana":"Comienza en "+dd+(dd===1?" día":" días"),val:Math.max(0,7-dd),max:7,big:dd,small:dd===1?"día":"días"});
   document.querySelectorAll(".t").forEach(function(c){c.addEventListener("pointermove",function(e){var r=c.getBoundingClientRect();c.style.setProperty("--mx",(e.clientX-r.left)+"px");c.style.setProperty("--my",(e.clientY-r.top)+"px");});});
 }
+function apply(txt,ts){var r=parseSheet(txt);V=r.v;NS=r.sin;render();}
+function hhmm(ts){var d=new Date(ts||Date.now());return ("0"+d.getHours()).slice(-2)+":"+("0"+d.getMinutes()).slice(-2);}
+function foot(m){$("foot").textContent=m;}
+function textOf(res){var p=res&&res.payload,j;
+  if(p&&typeof p==="object"&&p.fileContent!=null)return p.fileContent;
+  if(typeof p==="string"){try{j=JSON.parse(p);if(j&&j.fileContent!=null)return j.fileContent;}catch(e){}return p;}
+  var b=res&&res.content&&res.content[0]&&res.content[0].text;
+  if(b){try{j=JSON.parse(b);if(j&&j.fileContent!=null)return j.fileContent;}catch(e){}return b;}
+  return null;}
+var SNAPMSG="Mostrando la captura del 2 de noviembre de 2026 de «planilla de tickets» (carpeta CREDICOOP).";
 $("sim").addEventListener("change",render);
 $("hoy").addEventListener("click",function(){$("sim").value=iso(new Date());render();});
 $("sim").value=iso(new Date());
-render();
+apply(SNAP);foot(SNAPMSG);setLv("","Captura");
+var mcpH=null,busy=false;
+function setLv(c,t){var e=$("lv");e.className="lv "+c;e.textContent=t;}
+function pull(){
+  if(!mcpH||busy)return;busy=true;
+  mcpH.callTool(SERVER,TOOL,{fileId:FILE_ID},{cache:false}).then(function(res){
+    var tx=textOf(res);if(!tx)throw{code:"empty"};
+    var r=parseSheet(tx);if(!r.v.length&&!r.sin.length)throw{code:"format"};
+    V=r.v;NS=r.sin;render();
+    setLv("on","En vivo · "+hhmm());
+    foot("Datos leídos de «planilla de tickets» en Drive a las "+hhmm()+". Se actualizan solos cada 30 segundos y al volver a esta pestaña.");
+  }).catch(function(e){var c=e&&e.code;
+    setLv("err","Sin datos en vivo");
+    foot(c==="server_not_connected"?"Google Drive no está conectado en tu cuenta de Claude. "+SNAPMSG:
+      c==="needs_reauth"?"Hay que volver a autorizar Google Drive en Claude. "+SNAPMSG:
+      (c==="not_granted"||c==="approval_required"||c==="blocked_by_policy")?"No diste permiso a la página para leer Drive. Pulsa «Actualizar» para que lo vuelva a pedir. "+SNAPMSG:
+      c==="format"||c==="empty"?"Drive respondió, pero la planilla no tiene el formato esperado. "+SNAPMSG:
+      "No se pudo leer Drive ("+(c||"error")+"). Se muestran los últimos datos disponibles.");
+  }).then(function(){busy=false;});
+}
+if(window.claude&&claude.use){claude.use("mcp").then(function(m){
+  if(!m){setLv("err","Sin Drive en esta vista");foot("Esta vista no permite conectar con Drive. Abre la página desde su enlace en claude.ai; si la descargaste o la subiste a otro sitio, solo muestra la captura. "+SNAPMSG);return;}
+  mcpH=m;$("rf").hidden=false;$("rf").addEventListener("click",pull);
+  pull();
+  setInterval(function(){if(!document.hidden)pull();},30000);
+  document.addEventListener("visibilitychange",function(){if(!document.hidden)pull();});
+}).catch(function(){setLv("err","Sin Drive en esta vista");});}
+else{setLv("err","Sin Drive en esta vista");foot("Esta vista no permite conectar con Drive. Abre la página desde su enlace en claude.ai; si la descargaste o la subiste a otro sitio, solo muestra la captura. "+SNAPMSG);}
 })();
 </script>
 </body>
